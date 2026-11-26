@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Isla del Lagarto — Aventura Pixel Art 2D</title>
+  <link rel="stylesheet" href="style.css?v=3" />
+</head>
+<body>
+  <div id="game-shell">
+    <!-- Top Retro HUD Bar -->
+    <header id="hud-bar">
+      <div class="hud-group">
+        <div class="hud-pill" title="Salud de Kai">
+          <span class="hud-label">VIDA</span>
+          <div id="hud-hearts" class="hearts-row"></div>
+        </div>
+        <div class="hud-pill" id="hud-oxygen-wrap" style="display:none;" title="Oxígeno bajo el agua">
+          <span class="hud-label">AIRE</span>
+          <div class="meter-track"><div id="hud-oxygen-fill" class="meter-fill cyan"></div></div>
+        </div>
+      </div>
+
+      <div class="hud-group center-title">
+        <span id="hud-level-name">NIVEL 1: PLAYA DEL CORAL</span>
+      </div>
+
+      <div class="hud-group">
+        <div class="hud-pill" title="Conchas y Gemas">
+          <span class="hud-icon gem-icon">◆</span>
+          <span id="hud-gems">000</span>
+        </div>
+        <div class="hud-pill" title="Reliquias Secretas de la Zona">
+          <span class="hud-icon relic-icon">★</span>
+          <span id="hud-relics">0/3</span>
+        </div>
+        <button id="btn-sound" class="pixel-btn small" title="Activar / Silenciar Audio (M)">🔊</button>
+        <button id="btn-pause" class="pixel-btn small" title="Pausa (Esc / P)">❚❚</button>
+      </div>
+    </header>
+
+    <!-- Main Pixel Canvas Viewport -->
+    <main id="viewport-wrap">
+      <canvas id="game-canvas" width="400" height="225" tabindex="0"></canvas>
+
+      <!-- Bottom-left Ability Dock (also clickable!) -->
+      <div id="lizard-dock" class="hidden">
+        <button class="ability-btn" data-ability="water" title="Lanzar Poder de Agua (S)">
+          <span class="key-badge">S</span>
+          <span class="ability-name">🌊 Agua</span>
+          <span class="cooldown-bar" id="cd-water"></span>
+        </button>
+        <button class="ability-btn" data-ability="tongue" title="Lengua Gancho (Clic Derecho o E)">
+          <span class="key-badge">E / R-Click</span>
+          <span class="ability-name">🦎 Lengua</span>
+          <span class="cooldown-bar" id="cd-tongue"></span>
+        </button>
+        <button class="ability-btn" data-ability="burrow" title="Explorar Grieta / Excavar (Q)">
+          <span class="key-badge">Q</span>
+          <span class="ability-name">🕳️ Grieta</span>
+          <span class="cooldown-bar" id="cd-burrow"></span>
+        </button>
+        <button class="ability-btn" data-ability="glow" title="Destello Secreto (F)">
+          <span class="key-badge">F</span>
+          <span class="ability-name">✨ Destello</span>
+          <span class="cooldown-bar" id="cd-glow"></span>
+        </button>
+      </div>
+
+      <!-- Context Prompt Toast inside viewport -->
+      <div id="context-toast" class="hidden"></div>
+
+      <!-- Title Screen Overlay -->
+      <section id="screen-title" class="overlay-screen">
+        <div class="overlay-card title-card">
+          <div class="badge-retro">EDICIÓN ISLA TROPICAL • PIXEL ART 16-BIT • v4</div>
+          <h1 class="game-title">ISLA DEL LAGARTO</h1>
+          <p class="subtitle">Kai y su pequeño lagarto Koko en busca de las reliquias perdidas</p>
+
+          <div class="controls-grid">
+            <div class="control-item"><kbd>←</kbd><kbd>→</kbd> o <kbd>A</kbd><kbd>D</kbd><span>Avanzar / Retroceder</span></div>
+            <div class="control-item"><kbd>↑</kbd> o <kbd>Espacio</kbd><span>Saltar / Nadar arriba</span></div>
+            <div class="control-item"><kbd>↓</kbd><span>Bucear / Bajar puente</span></div>
+            <div class="control-item"><kbd>Clic Izq.</kbd><span>Atacar con machete</span></div>
+            <div class="control-item"><kbd>S</kbd><span>Lanzar poder de agua</span></div>
+            <div class="control-item"><kbd>E</kbd>/<kbd>Q</kbd>/<kbd>F</kbd><span>Koko: Lengua / Grieta / Luz</span></div>
+          </div>
+
+          <div class="menu-actions">
+            <button id="btn-start" class="pixel-btn primary">▶ COMENZAR AVENTURA</button>
+            <button id="btn-level-select" class="pixel-btn">🗺️ SELECCIONAR NIVEL</button>
+          </div>
+          <p class="hint-foot">Consejo: Koko te avisará con <span class="gold-txt">!</span> cuando haya muros falsos, grietas o secretos cerca.</p>
+        </div>
+      </section>
+
+      <!-- Level Select Overlay -->
+      <section id="screen-levels" class="overlay-screen hidden">
+        <div class="overlay-card wide-card">
+          <h2>MAPA DE LA ISLA</h2>
+          <div id="level-cards" class="level-grid"></div>
+          <div class="menu-actions">
+            <button id="btn-back-title" class="pixel-btn">← VOLVER</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pause Overlay -->
+      <section id="screen-pause" class="overlay-screen hidden">
+        <div class="overlay-card">
+          <h2>JUEGO EN PAUSA</h2>
+          <p class="subtitle" id="pause-stats"></p>
+          <div class="menu-actions vertical">
+            <button id="btn-resume" class="pixel-btn primary">▶ CONTINUAR</button>
+            <button id="btn-restart-level" class="pixel-btn">↻ REINICIAR NIVEL</button>
+            <button id="btn-to-map" class="pixel-btn">🗺️ MAPA DE LA ISLA</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Level Complete / Game Over / Victory Overlay -->
+      <section id="screen-result" class="overlay-screen hidden">
+        <div class="overlay-card">
+          <div id="result-badge" class="badge-retro">ZONA COMPLETADA</div>
+          <h2 id="result-title">¡NIVEL SUPERADO!</h2>
+          <p id="result-desc" class="subtitle"></p>
+          <div id="result-stats" class="stats-box"></div>
+          <div class="menu-actions">
+            <button id="btn-next-level" class="pixel-btn primary">SIGUIENTE NIVEL ▶</button>
+            <button id="btn-retry-level" class="pixel-btn">↻ REINTENTAR</button>
+            <button id="btn-result-map" class="pixel-btn">🗺️ MAPA</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom quick-reference bar -->
+    <footer id="footer-bar">
+      <span><strong>Mover/Saltar:</strong> Flechas o <kbd>A</kbd><kbd>D</kbd> + <kbd>Espacio</kbd></span>
+      <span><strong>Atacar:</strong> Clic Izquierdo · <strong>Poder de Agua:</strong> <kbd>S</kbd></span>
+      <span><strong>Koko:</strong> <kbd>E</kbd>/Clic Der. (Lengua) · <kbd>Q</kbd> (Grieta) · <kbd>F</kbd> (Destello) · <strong>v4</strong></span>
+    </footer>
+  </div>
+
+  <script src="js/audio.js?v=4"></script>
+  <script src="js/sprites.js?v=4"></script>
+  <script src="js/levels.js?v=4"></script>
+  <script src="js/entities.js?v=4"></script>
+  <script src="js/game.js?v=4"></script>
+</body>
+</html>
